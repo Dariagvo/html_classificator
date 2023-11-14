@@ -4,6 +4,9 @@ import csv
 
 
 class Parser:
+    def parse_a(self):
+        pass
+
     def return_url_info(self, url: str) -> str:
         url = "https://" + url
         result = ""
