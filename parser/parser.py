@@ -1,115 +1,99 @@
-from bs4 import BeautifulSoup
-import requests as req
-import re
-import string
 import csv
-import pandas as pd
-import typing as tp
+import requests as re
+from bs4 import BeautifulSoup
+import re as regex
+import time
 
+total_sites = sum(1 for line in open('hse_x_td_url.csv', 'r', encoding='utf-8'))
 
-class Parser:
-    _pos_category = "Образование"
+start_time = time.time()  # время начала работы скрипта
 
-    @staticmethod
-    def return_url_info(url: str) -> str | None:
+with open('/Users/macbook/Downloads/parsed_data.csv', 'w', encoding='utf-8', newline='') as output_file:
+    # заголовки для новой таблицы
+    fieldnames = ['url', 'base_category_nm', 'parsed_text']
+    # писатель для записи в CSV
+    csv_writer = csv.DictWriter(output_file, fieldnames=fieldnames)
+    # заголовки в файл
+    csv_writer.writeheader()
+
+    with open('hse_x_td_url.csv', 'r', encoding='utf-8') as file:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/91.0.4472.124 Safari/537.36 '
         }
 
-        url = "https://" + url
+        csv_reader = csv.reader(file, delimiter=';')
 
-        # Проверяет, что можно через requests.get(url)
-        try:
-            response = req.get(url, headers=headers, timeout=10)
+        next(csv_reader)
 
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
+        for index, row in enumerate(csv_reader, start=1):  # для нумерации сайтов
+            url = "https://" + row[0]
+            base_category_nm = row[1]
 
-                # извлекаем description
-                meta_description = soup.find('meta',
-                                             attrs={'name': 'description'})
+            # проверка, на необрабатываемые нами сайты
+            social_networks = ['vk.com', 'facebook.com', 'instagram.com', 't.me']
+            is_social_network = any(domain in url for domain in social_networks)
 
-                # получаем его содержимое, если есть
-                description_content = meta_description[
-                    'content'] if meta_description and 'content' in meta_description.attrs else ''
+            if is_social_network:
+                print(f"Сайт {url} является социальной сетью, пропускаем.")
+                continue
 
-                # получаем весь текст со страницы
-                all_text = ' '.join(
-                    [element.get_text(strip=True) for element in
-                     soup.find_all(string=True)])
+            if 'getcourse.ru' in url:
+                print(f"Сайт {url} содержит getcourse.ru, пропускаем.")
+                continue
+            if 'taplink.cc' in url or 'taplink.ws' in url:
+                print(f"Сайт {url} содержит taplink, пропускаем.")
+                continue
 
-                all_text_with_description = f"{description_content} {all_text}"
-                return all_text_with_description
-            elif response.status_code != 403 and response.status_code != 404:
-                print(f"Ошибка при получении страницы: {response.status_code}")
-        except Exception as e:
-            if not isinstance(e, req.ConnectionError):
-                print(f"Ошибка при обработке URL {url}: {type(e).__name__}, {e}")
+            print(f"--> Сайт {index} / {total_sites} в датасете. URL: {url}, Категория: {base_category_nm}")
 
-    def parse_from_table(self, table: str, head: int | None = None, show: bool = True, return_data: bool = False) -> tp.Any:
-        with open(table, 'r', encoding='utf-8') as file:
-            csv_reader = csv.reader(file, delimiter=';')
-            next(csv_reader)
+            try:
+                response = re.get(url, headers=headers, timeout=10)
+                response.encoding = response.apparent_encoding  # Определение правильной кодировки
 
-            for ind, row in enumerate(csv_reader):
-                if head and ind == head:
-                    return
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
 
-                url = row[0]
-                base_category_nm = row[1]
+                    # description
+                    meta_description = soup.find('meta', attrs={'name': 'description'})
 
-                result = self.return_url_info(str(url))
+                    # получаем его содержимое, если есть
+                    description_content = meta_description[
+                        'content'] if meta_description and 'content' in meta_description.attrs else ''
 
-                if result is None:
-                    continue
+                    # получаем весь текст со страницы
+                    all_text = ' '.join([element.get_text(strip=True) for element in soup.find_all(string=True)])
 
-                if show:
-                    print(f"URL: {url}, Категория: {base_category_nm}")
-                    print("All Text with Description:", result)
-                if return_data:
-                    yield result, 1 if base_category_nm == self._pos_category else 0
+                    all_text_with_description = f"{description_content} {all_text}"
 
-    def set_pos_category(self, new_cat: str) -> None:
-        self._pos_category = new_cat
+                    # удаляем ссылки
+                    all_text_with_description = regex.sub(r'http\S+', '', all_text_with_description)
 
-    @staticmethod
-    def value_count(table: str, column: str = 'base_category_nm') -> None:
-        data = pd.read_csv(table, on_bad_lines='skip', sep=';', lineterminator='\n')
-        print(data[column].value_counts())
+                    # заменяем символы, которые не являются буквами или цифрами на пробел
+                    all_text_with_description = ''.join([char if char.isalpha() or char.isdigit() or char.isspace() else ' ' for char in all_text_with_description])
 
-    @staticmethod
-    def remove_emoji(text):
-        emoji_pattern = re.compile("["
-                                   u"\U0001F600-\U0001F64F"  # emoticons
-                                   u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-                                   u"\U0001F680-\U0001F6FF"  # transport & map symbols
-                                   u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-                                   u"\U00002702-\U000027B0"
-                                   u"\U000024C2-\U0001F251"
-                                   "]+", flags=re.UNICODE)
-        return emoji_pattern.sub(r'', text)
+                    # удаляем лишние пробелы
+                    all_text_with_description = ' '.join(all_text_with_description.split())
 
-    @staticmethod
-    def remove_url(text):
-        url_pattern = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
-        return url_pattern.sub(r'', text)
+                    print(f"Полный текст: {all_text_with_description}")
 
-    @staticmethod
-    def remove_punctuation(text):
-        delete_dict = {sp_character: '' for sp_character in string.punctuation}
-        delete_dict[' '] = ' '
-        table = str.maketrans(delete_dict)
-        text1 = text.translate(table)
-        textArr = text1.split()
-        text2 = ' '.join([w for w in textArr if (
-                    not w.isdigit() and (not w.isdigit() and len(w) > 2))])
+                    # проверка на длину текста
+                    if len(all_text_with_description) < 50:
+                        print("Текст слишком короткий, пропускаем.")
+                        continue
 
-        return text2.lower()
+                    # данные в новую таблицу
+                    csv_writer.writerow({'url': url, 'base_category_nm': base_category_nm, 'parsed_text': all_text_with_description})
+                elif response.status_code != 403 and response.status_code != 404:
+                    print(f"Ошибка при получении страницы: {response.status_code}")
+                else:
+                    print(f"Ошибка при получении страницы: {response.status_code}")
+            except Exception as e:
+                # if not isinstance(e, re.ConnectionError):
+                print(f"Ошибка при обработке данного сайта")
 
-    @staticmethod
-    def clean_text(text):
-        result = Parser.remove_emoji(text)
-        result = Parser.remove_url(result)
-        result = Parser.remove_punctuation(result)
-        return result
+            # время, прошедшее с начала работы скрипта
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+            print(
+                f"Прошло времени: {elapsed_time:.2f} сек., средняя скорость обработки 1 сайта: {(elapsed_time / index):.2f} сек.")
