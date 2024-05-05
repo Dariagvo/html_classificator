@@ -1,0 +1,38 @@
+from nltk.tokenize import word_tokenize
+from collections import Counter
+import pandas as pd
+from tqdm import tqdm
+
+file_path = 'processed_data_without_top_words_and_numbers.csv'  # файл откуда читаем
+df = pd.read_csv(file_path)
+
+
+def process_text(text):
+    tokens = word_tokenize(text.lower())  # Токенизация
+
+    if len(text) > 512:
+        word_freq = Counter(tokens)
+
+        concatenated_keywords = ""
+        total_length = 0
+        for keyword, frequency in word_freq.most_common(150):
+            if total_length + len(keyword) <= 512:
+                concatenated_keywords += keyword + " "
+                total_length += len(keyword) + 1
+            else:
+                break
+        concatenated_keywords = concatenated_keywords.strip()
+    else:
+        concatenated_keywords = text
+
+    return concatenated_keywords
+
+
+tqdm.pandas(desc="Processing texts")
+total_texts = len(df)  # общее количество текстов
+df['parsed_text'] = df['parsed_text'].progress_apply(process_text)
+tqdm.write("Processed {} texts out of {}".format(total_texts,
+                                                 total_texts))  # вывод информации о количестве обработанных текстов
+
+output_file_path = '/Users/macbook/Downloads/full_processed_data.csv'  # файл куда записываем
+df.to_csv(output_file_path, index=False)
