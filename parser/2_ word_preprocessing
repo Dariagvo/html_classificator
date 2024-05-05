@@ -1,0 +1,62 @@
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from collections import Counter
+import string
+import pandas as pd
+import ssl
+import pymorphy2
+from tqdm import tqdm
+
+morph = pymorphy2.MorphAnalyzer()
+
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger_ru')
+
+file_path = 'parsed_data.csv'  #файл откуда читаем
+df = pd.read_csv(file_path)
+# print(df.head())
+
+def process_text(text):
+    text = text.split(';')[0]  # Получаем только текст до точки с запятой
+    text = text.translate(str.maketrans('', '', string.punctuation))  # Удаляем пунктуацию
+    tokens = word_tokenize(text.lower())  # Токенизация
+    stop_words = set(stopwords.words('russian'))  # Стоп-слова
+    filtered_tokens = [word for word in tokens if word.isalnum() and word not in stop_words]  # Фильтрация стоп-слов и пунктуации
+
+    lemmatized_tokens = []
+    for token in filtered_tokens:
+        lemmatized_tokens.append(morph.parse(token)[0].normal_form)
+
+    if len(text) > 2048:  # число опционально
+        word_freq = Counter(lemmatized_tokens)
+
+        concatenated_keywords = ""
+        total_length = 0
+        for keyword, frequency in word_freq.most_common(150):
+            if total_length + len(keyword) <= 2048:
+                concatenated_keywords += keyword + " "
+                total_length += len(keyword) + 1
+            else:
+                break
+        concatenated_keywords = concatenated_keywords.strip()
+    else:
+        concatenated_keywords = text
+
+    return concatenated_keywords
+
+tqdm.pandas(desc="Processing texts")
+total_texts = len(df) # общее количество текстов
+df['parsed_text'] = df['parsed_text'].progress_apply(process_text)
+tqdm.write("Processed {} texts out of {}".format(total_texts, total_texts))  # вывод информации о количестве обработанных текстов
+
+output_file_path = 'processed_data.csv'  #файл куда записываем
+df.to_csv(output_file_path, index=False)
