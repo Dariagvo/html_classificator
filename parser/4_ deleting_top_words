@@ -1,0 +1,38 @@
+import csv
+import re
+from collections import defaultdict
+
+# исходный файл
+input_file_path = "processed_data_filtered.csv"
+# куда записываем
+output_file_path = "processed_data_filtered_without_top_words_and_numbers.csv"
+
+# что исключаем
+excluded_words = {"наш", "ваш", "контакт", "свой", "который", "это", "год", "сайт", "телефон", "день", "цена", "мочь",
+                  "каждый", "получить", "мы", "г", "самый", "скидка", "также", "адрес", "акция", "первый", "быть",
+                  "имя", "оставить", "вы", "звонок", "согласие", "связаться", "смотреть", "номер", "такой", "поиск",
+                  "давать", "оферта", "mail", "ru", "регистрация", "перейти", "мой", "whatsapp", "спасибо", "пароль",
+                  "оформить", "являться", "просто", "telegram", "войти", "email", "какой", "новинка", "записаться", "e",
+                  "м", "соглашаться", "вход", "всё", "иметь", "предлагать", "разный", "посмотреть", "info",
+                  "необходимый", "оплатить", "уникальный", "пн", "вт", "ср", "чт", "пт", "сб", "вс", "нужный",
+                  "популярный", "to"}  # берем из топ слов самые общие по своему вкусу :)
+
+with open(input_file_path, newline='') as input_file, open(output_file_path, 'w', newline='') as output_file:
+    csv_reader = csv.reader(input_file)
+    csv_writer = csv.writer(output_file)
+
+    headers = next(csv_reader)
+    csv_writer.writerow(headers)
+
+    for row in csv_reader:
+        text = row[2]
+
+        # опционально - удаление чисел из текста
+        text = re.sub(r'\b\d+\b', '', text)
+
+        words = text.split()
+        cleaned_words = [word for word in words if word.lower() not in excluded_words]
+
+        row[2] = ' '.join(cleaned_words)
+
+        csv_writer.writerow(row)
