@@ -70,7 +70,9 @@ with open('parsed_data.csv', 'w', encoding='utf-8', newline='') as output_file:
                     all_text_with_description = regex.sub(r'http\S+', '', all_text_with_description)
 
                     # заменяем символы, которые не являются буквами или цифрами на пробел
-                    all_text_with_description = ''.join([char if char.isalpha() or char.isdigit() or char.isspace() else ' ' for char in all_text_with_description])
+                    all_text_with_description = ''.join(
+                        [char if char.isalpha() or char.isdigit() or char.isspace() else ' ' for char in
+                         all_text_with_description])
 
                     # удаляем лишние пробелы
                     all_text_with_description = ' '.join(all_text_with_description.split())
@@ -83,20 +85,24 @@ with open('parsed_data.csv', 'w', encoding='utf-8', newline='') as output_file:
                         continue
 
                     # исключение строк, содержащих в текстах некоторые подстроки
-                    exclude_substrings = ['Sorry your request has been denied', 'Your account is suspended', 'without JavaScript', 
-                                        'Сайт заблокирован', 'Действие аккаунта приостановлено', 'проводятся технические работы', 
-                                        'Сайт временно недоступен']  # список можно пополнять
+                    exclude_substrings = ['Sorry your request has been denied', 'Your account is suspended',
+                                          'without JavaScript',
+                                          'Сайт заблокирован', 'Действие аккаунта приостановлено',
+                                          'проводятся технические работы',
+                                          'Сайт временно недоступен']  # список можно пополнять
                     if any(substring in all_text_with_description for substring in exclude_substrings):
                         print("Текст содержит недопустимые подстроки, пропускаем.")
                         continue
 
                     # удаление предложений из текстов
-                    exclude_sentences = ['You need to enable JavaScript to run this app', 'Made on Tilda']  # список можно пополнять
+                    exclude_sentences = ['You need to enable JavaScript to run this app',
+                                         'Made on Tilda']  # список можно пополнять
                     for sentence in exclude_sentences:
                         all_text_with_description = all_text_with_description.replace(sentence, '')
 
                     # данные в новую таблицу
-                    csv_writer.writerow({'url': url, 'base_category_nm': base_category_nm, 'parsed_text': all_text_with_description})
+                    csv_writer.writerow(
+                        {'url': url, 'base_category_nm': base_category_nm, 'parsed_text': all_text_with_description})
                 elif response.status_code != 403 and response.status_code != 404:
                     print(f"Ошибка при получении страницы: {response.status_code}.")
                 else:
