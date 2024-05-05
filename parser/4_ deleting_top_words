@@ -3,9 +3,9 @@ import re
 from collections import defaultdict
 
 # исходный файл
-input_file_path = "processed_data_filtered.csv"
+input_file_path = "processed_data.csv"
 # куда записываем
-output_file_path = "processed_data_filtered_without_top_words_and_numbers.csv"
+output_file_path = "processed_data_without_top_words_and_numbers.csv"
 
 # что исключаем
 excluded_words = {"наш", "ваш", "контакт", "свой", "который", "это", "год", "сайт", "телефон", "день", "цена", "мочь",
