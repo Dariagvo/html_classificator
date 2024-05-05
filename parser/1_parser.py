@@ -8,7 +8,7 @@ total_sites = sum(1 for line in open('hse_x_td_url.csv', 'r', encoding='utf-8'))
 
 start_time = time.time()  # время начала работы скрипта
 
-with open('/Users/macbook/Downloads/parsed_data.csv', 'w', encoding='utf-8', newline='') as output_file:
+with open('parsed_data.csv', 'w', encoding='utf-8', newline='') as output_file:
     # заголовки для новой таблицы
     fieldnames = ['url', 'base_category_nm', 'parsed_text']
     # писатель для записи в CSV
