@@ -31,7 +31,7 @@ with open('/Users/macbook/Downloads/parsed_data.csv', 'w', encoding='utf-8', new
             base_category_nm = row[1]
 
             # проверка, на необрабатываемые нами сайты
-            social_networks = ['vk.com', 'facebook.com', 'instagram.com', 't.me']
+            social_networks = ['vk.com', 'facebook.com', 'instagram.com', 't.me', 'wa.me']
             is_social_network = any(domain in url for domain in social_networks)
 
             if is_social_network:
@@ -82,15 +82,28 @@ with open('/Users/macbook/Downloads/parsed_data.csv', 'w', encoding='utf-8', new
                         print("Текст слишком короткий, пропускаем.")
                         continue
 
+                    # исключение строк, содержащих в текстах некоторые подстроки
+                    exclude_substrings = ['Sorry your request has been denied', 'Your account is suspended', 'without JavaScript', 
+                                        'Сайт заблокирован', 'Действие аккаунта приостановлено', 'проводятся технические работы', 
+                                        'Сайт временно недоступен']  # список можно пополнять
+                    if any(substring in all_text_with_description for substring in exclude_substrings):
+                        print("Текст содержит недопустимые подстроки, пропускаем.")
+                        continue
+
+                    # удаление предложений из текстов
+                    exclude_sentences = ['You need to enable JavaScript to run this app', 'Made on Tilda']  # список можно пополнять
+                    for sentence in exclude_sentences:
+                        all_text_with_description = all_text_with_description.replace(sentence, '')
+
                     # данные в новую таблицу
                     csv_writer.writerow({'url': url, 'base_category_nm': base_category_nm, 'parsed_text': all_text_with_description})
                 elif response.status_code != 403 and response.status_code != 404:
-                    print(f"Ошибка при получении страницы: {response.status_code}")
+                    print(f"Ошибка при получении страницы: {response.status_code}.")
                 else:
-                    print(f"Ошибка при получении страницы: {response.status_code}")
+                    print(f"Ошибка при получении страницы: {response.status_code}.")
             except Exception as e:
                 # if not isinstance(e, re.ConnectionError):
-                print(f"Ошибка при обработке данного сайта")
+                print(f"Ошибка при обработке данного сайта.")
 
             # время, прошедшее с начала работы скрипта
             current_time = time.time()
