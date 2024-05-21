@@ -16,7 +16,9 @@
 1. Результат разработки парсера находится в main/parser
 2. Работа с RNN, CNN в main/models
 3. Работа с датасетом imdb в main/imdb
-4. 
+4. Работа с бинарной классификацией в xlm_roberta_binclass/bin class
+5. Работа с мультифклассификацией в xlm_roberta_multiclass/multiclass
+6. Работа с кластеризацией в cluster/cluster
 
 ## Основные результаты
 
