@@ -16,9 +16,15 @@
 1. Результат разработки парсера находится в main/parser
 2. Работа с RNN, CNN в main/models
 3. Работа с датасетом imdb в main/imdb
-4. Работа с бинарной классификацией в xlm_roberta_binclass/bin class
-5. Работа с мультифклассификацией в xlm_roberta_multiclass/multiclass
-6. Работа с кластеризацией в cluster/cluster
+4. Работа с бинарной классификацией в main/bin class
+5. Работа с мультифклассификацией в main/multiclass
+6. Работа с кластеризацией в main/cluster
+
+## Ссылки на графики
+
+1. https://wandb.ai/rodion-chernomordin/html%20classificator?nw=nwuserrodionchernomordin
+2. https://wandb.ai/rodion-chernomordin/xlm-roberta-binclass-2?nw=nwuserrodionchernomordin
+3. https://wandb.ai/rodion-chernomordin/xlm-roberta-multiclass?nw=nwuserrodionchernomordin
 
 ## Основные результаты
 
